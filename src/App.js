@@ -2,28 +2,61 @@ import React, { Component } from 'react';
 import Plan from './Plan';
 import './App.css';
 import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
+import axios from 'axios'
+
+//Axios Instance
+const ai = axios.create({
+  baseURL: 'http://127.0.0.1:8000'
+})
 
 class App extends Component{
   state = {
     items : [],
     text: ""
   }
+  showPlan = () =>{
+    ai.get("/list/")
+    .then((res) => {
+        this.setState({ items:res.data })
+    })
+  }
+
+  addPlan = (d) => {
+    if(this.state.text !== ""){
+      ai.post('/create/', d)
+      .then((res) => {
+        this.setState({ text: ''})
+        this.showPlan()
+      })
+    }
+  }
+
   handleChange = e =>{
     this.setState({text: e.target.value})
   }
   handleAdd = e => {
-    if(this.state.text !== ""){
-      const items = [...this.state.items, this.state.text];
-      this.setState({items: items, text: ""});
-    }
+    // if(this.state.text !== ""){
+    //   const items = [...this.state.items, this.state.text];
+    //   this.setState({items: items, text: ""});
+    // }
+    let dt = {item: this.state.text}
+    this.addPlan(dt)
   }
 
   handleDelete = id =>{
-      const Olditems = [...this.state.items]
-      const items = Olditems.filter((element, i) => {
-        return i !== id
+      // const Olditems = [...this.state.items]
+      // const items = Olditems.filter((element, i) => {
+      //   return i !== id
+      // })
+      // this.setState({items:items});
+      ai.delete(`/delete/${id}`)
+      .then((res) => {
+        this.showPlan()
       })
-      this.setState({items:items});
+  }
+
+  componentDidMount(){
+    this.showPlan();
   }
   render(){
     return(
@@ -43,7 +76,8 @@ class App extends Component{
                 <ul className='list-unstyled row m-5 text-white'>
                   {
                     this.state.items.map((value, i)=>{
-                      return <Plan key={i} id={i} value={value} sendData = {this.handleDelete} />
+                      return <Plan key={i} id={value.id} value={value.item} 
+                      sendData = {this.handleDelete} />
                     })
                   }
                 </ul>
